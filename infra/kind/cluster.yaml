@@ -1,0 +1,15 @@
+# kind cluster for the SkyPilot POC.
+# The SkyPilot API server is exposed through ingress-nginx on NodePort 30050,
+# which is mapped to localhost:30050 on the host.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: skypilot
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30050
+        hostPort: 30050
+        listenAddress: "127.0.0.1"
+        protocol: TCP
+  # Worker node where SkyPilot schedules its task pods.
+  - role: worker

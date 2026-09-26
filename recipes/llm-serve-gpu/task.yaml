@@ -1,0 +1,25 @@
+# GPU recipe: serve an LLM with vLLM behind an OpenAI-compatible API.
+# This will NOT run on the local kind cluster (no GPUs). Use it once a GPU
+# Kubernetes cluster or cloud account is connected to the API server:
+#   sky launch -c llm recipes/llm-serve-gpu/task.yaml
+#   ENDPOINT=$(sky status --endpoint 8000 llm)
+#   curl http://$ENDPOINT/v1/models
+name: vllm-serve
+
+resources:
+  accelerators: {L4:1, A10G:1, A100:1}
+  memory: 16+
+  ports: 8000
+  use_spot: false
+
+envs:
+  MODEL: Qwen/Qwen2.5-1.5B-Instruct
+
+setup: |
+  pip install --quiet vllm
+
+run: |
+  vllm serve $MODEL \
+    --host 0.0.0.0 --port 8000 \
+    --max-model-len 4096 \
+    --tensor-parallel-size $SKYPILOT_NUM_GPUS_PER_NODE

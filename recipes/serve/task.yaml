@@ -1,0 +1,22 @@
+# Serve a CPU sentiment model behind FastAPI on port 8000.
+#   cd recipes/serve && sky launch -c serve task.yaml
+# Ports use pod IPs on kind (see infra/helm/values-kind.yaml), so port-forward the pod:
+#   kubectl --context kind-skypilot -n skypilot get pods | grep serve
+#   kubectl --context kind-skypilot -n skypilot port-forward pod/<pod-name> 8000:8000
+#   curl -X POST localhost:8000/predict -H 'content-type: application/json' -d '{"text":"SkyPilot is great"}'
+name: sentiment-api
+
+resources:
+  infra: k8s
+  cpus: 2
+  memory: 4
+  ports: 8000
+
+workdir: .
+
+setup: |
+  pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+  pip install --quiet transformers fastapi "uvicorn[standard]"
+
+run: |
+  uvicorn app:app --host 0.0.0.0 --port 8000

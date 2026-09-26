@@ -1,0 +1,10 @@
+# Persistent volume for checkpoints, backed by a Kubernetes PVC.
+# kind ships the `standard` (local-path) storage class, which is ReadWriteOnce.
+#   sky volumes apply recipes/mnist/volume.yaml
+name: mnist-ckpt
+type: k8s-pvc
+infra: k8s
+size: 1Gi
+config:
+  storage_class_name: standard
+  access_mode: ReadWriteOnce

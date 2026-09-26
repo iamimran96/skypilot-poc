@@ -1,0 +1,22 @@
+# Smallest possible SkyPilot task: provision a pod, run a command, print env.
+#   sky launch -c hello recipes/hello/task.yaml
+name: hello
+
+resources:
+  infra: k8s
+  cpus: 1
+  memory: 1
+
+envs:
+  GREETING: hello from skypilot
+
+setup: |
+  echo "Setup runs once when the cluster is provisioned"
+
+run: |
+  echo "$GREETING"
+  echo "Node rank: $SKYPILOT_NODE_RANK of $SKYPILOT_NUM_NODES"
+  echo "Host: $(hostname)"
+  python --version
+  nproc
+  free -h

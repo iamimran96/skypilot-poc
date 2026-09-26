@@ -1,0 +1,26 @@
+# Multi-node distributed training: 2 pods, one torchrun process each.
+#   cd recipes/ddp && sky launch -c ddp task.yaml
+name: ddp-cpu
+
+num_nodes: 2
+
+resources:
+  infra: k8s
+  cpus: 1
+  memory: 2
+
+workdir: .
+
+setup: |
+  pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+
+run: |
+  MASTER_ADDR=$(echo "$SKYPILOT_NODE_IPS" | head -n1)
+  echo "rank $SKYPILOT_NODE_RANK / $SKYPILOT_NUM_NODES, master $MASTER_ADDR"
+  torchrun \
+    --nnodes=$SKYPILOT_NUM_NODES \
+    --nproc_per_node=1 \
+    --node_rank=$SKYPILOT_NODE_RANK \
+    --master_addr=$MASTER_ADDR \
+    --master_port=29500 \
+    train_ddp.py

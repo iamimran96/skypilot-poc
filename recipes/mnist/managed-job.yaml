@@ -1,0 +1,28 @@
+# Managed job: SkyPilot restarts the job if its pod dies, and train.py
+# resumes from the checkpoint on the persistent volume.
+# Create the volume first (see volume.yaml), then:
+#   cd recipes/mnist && sky jobs launch -n mnist-job managed-job.yaml
+# Try recovery: delete the job's pod with kubectl while it trains and watch
+#   sky jobs queue   /   sky jobs logs <job-id>
+name: mnist-managed
+
+resources:
+  infra: k8s
+  cpus: 2
+  memory: 4
+  job_recovery:
+    max_restarts_on_errors: 2
+
+workdir: .
+
+volumes:
+  /ckpt: mnist-ckpt
+
+envs:
+  EPOCHS: 5
+
+setup: |
+  pip install --quiet torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+run: |
+  python train.py --epochs $EPOCHS --data-dir /ckpt/data --ckpt-dir /ckpt

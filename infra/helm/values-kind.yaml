@@ -1,0 +1,37 @@
+# SkyPilot API server overrides for a local kind cluster.
+# Full reference: https://docs.skypilot.co/en/latest/reference/api-server/helm-values-spec.html
+
+apiService:
+  # The chart defaults to 4 CPU / 8Gi, which is too much for a laptop.
+  skipResourceCheck: true
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+  # Server-side ~/.sky/config.yaml. Only applied on first install; later
+  # changes must be made from the dashboard.
+  config: |
+    allowed_clouds:
+      - kubernetes
+    kubernetes:
+      # kind has no LoadBalancer implementation, so don't create LoadBalancer
+      # services for task ports; reach them with `kubectl port-forward`.
+      ports: podip
+
+# Let SkyPilot launch workloads on the same kind cluster it runs in.
+kubernetesCredentials:
+  useApiServerCluster: true
+  inclusterNamespace: skypilot
+
+# kind has no cloud load balancer, so expose ingress-nginx on a fixed NodePort
+# that kind/cluster.yaml maps to localhost:30050.
+ingress-nginx:
+  controller:
+    service:
+      type: NodePort
+      nodePorts:
+        http: 30050
+        https: 30051

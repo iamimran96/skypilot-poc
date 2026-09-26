@@ -1,0 +1,20 @@
+# Train a small CNN on MNIST on a CPU pod.
+# Run from this directory so `workdir` syncs train.py:
+#   cd recipes/mnist && sky launch -c mnist task.yaml
+name: mnist-train
+
+resources:
+  infra: k8s
+  cpus: 2
+  memory: 4
+
+workdir: .
+
+envs:
+  EPOCHS: 2
+
+setup: |
+  pip install --quiet torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
+run: |
+  python train.py --epochs $EPOCHS
