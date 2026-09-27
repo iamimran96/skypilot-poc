@@ -1,0 +1,3 @@
+# SkyPilot client, matching the skypilot-nightly chart deployed by infra/scripts/deploy.sh.
+# The kubernetes extra is needed for `sky check kubernetes` and launching on the kind cluster.
+skypilot-nightly[kubernetes]

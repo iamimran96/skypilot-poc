@@ -3,6 +3,7 @@
 #
 # Usage:
 #   ./infra/scripts/deploy.sh         # create cluster (if missing) + install/upgrade SkyPilot
+#   GPU=1 ./infra/scripts/deploy.sh   # same, with the local NVIDIA GPU exposed to the cluster
 #
 # Configuration (environment variables, all optional):
 #   CLUSTER_NAME        kind cluster name                      (default: skypilot)
@@ -13,6 +14,7 @@
 #   WEB_USERNAME        basic-auth user for the API server     (default: skypilot)
 #   WEB_PASSWORD        basic-auth password; generated and saved to .credentials if unset
 #   HELM_TIMEOUT        how long to wait for the release       (default: 20m)
+#   GPU                 1 = GPU cluster via setup-gpu.sh       (default: 0)
 set -euo pipefail
 
 INFRA_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -25,6 +27,7 @@ RELEASE_NAME="${RELEASE_NAME:-skypilot}"
 SKYPILOT_CHART="${SKYPILOT_CHART:-skypilot-nightly}"
 SKYPILOT_VERSION="${SKYPILOT_VERSION:-}"
 HELM_TIMEOUT="${HELM_TIMEOUT:-20m}"
+GPU="${GPU:-0}"
 HOST_PORT=30050
 KUBE_CONTEXT="kind-${CLUSTER_NAME}"
 
@@ -60,10 +63,15 @@ create_cluster() {
   if kind get clusters 2>/dev/null | grep -qx "$CLUSTER_NAME"; then
     log "kind cluster '$CLUSTER_NAME' already exists, reusing it"
   else
-    log "Creating kind cluster '$CLUSTER_NAME'"
-    kind create cluster --name "$CLUSTER_NAME" --config "${INFRA_DIR}/kind/cluster.yaml" --wait 5m
+    local config="${INFRA_DIR}/kind/cluster.yaml"
+    [[ "$GPU" == "1" ]] && config="${INFRA_DIR}/kind/cluster-gpu.yaml"
+    log "Creating kind cluster '$CLUSTER_NAME' from $(basename "$config")"
+    kind create cluster --name "$CLUSTER_NAME" --config "$config" --wait 5m
   fi
   kubectl --context "$KUBE_CONTEXT" wait --for=condition=Ready nodes --all --timeout=5m
+  if [[ "$GPU" == "1" ]]; then
+    CLUSTER_NAME="$CLUSTER_NAME" "${INFRA_DIR}/scripts/setup-gpu.sh"
+  fi
 }
 
 deploy_skypilot() {

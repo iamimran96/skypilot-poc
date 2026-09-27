@@ -1,0 +1,22 @@
+# kind cluster with the local NVIDIA GPU exposed to the worker node.
+# Works with Docker Desktop on Windows (WSL2 backend): the GPU appears in the
+# Docker VM as /dev/dxg plus user-mode driver libraries under /usr/lib/wsl,
+# which are mounted into the worker. infra/scripts/setup-gpu.sh then installs
+# the NVIDIA container toolkit and device plugin inside the cluster.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: skypilot
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30050
+        hostPort: 30050
+        listenAddress: "127.0.0.1"
+        protocol: TCP
+  - role: worker
+    labels:
+      nvidia.com/gpu.present: "true"
+    extraMounts:
+      - hostPath: /usr/lib/wsl
+        containerPath: /usr/lib/wsl
+        readOnly: true
